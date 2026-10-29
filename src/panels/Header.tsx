@@ -1,4 +1,4 @@
-import { Network, Database, Terminal, BrainCircuit, Sliders, Crosshair, Building2 } from 'lucide-react';
+import { Network, Database, Terminal, BrainCircuit, Sliders, Crosshair, Building2, Wand2 } from 'lucide-react';
 import { getFirstNodeId } from '../data';
 
 export default function Header(props: any) {
@@ -90,6 +90,17 @@ export default function Header(props: any) {
             >
               <Building2 className="w-3.5 h-3.5" />
               Track 03 · Company Brain
+            </button>
+            <button
+              onClick={() => setActiveTab('refactor')}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition flex items-center gap-1.5 ${
+                activeTab === 'refactor'
+                  ? 'bg-emerald-600 text-white shadow'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Wand2 className="w-3.5 h-3.5" />
+              Refactor Studio
             </button>
             <button
               onClick={() => setActiveTab('backend')}

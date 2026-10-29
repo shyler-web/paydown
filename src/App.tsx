@@ -33,6 +33,7 @@ import BackendTab from './panels/BackendTab';
 import RepoGraphCanvas from './panels/RepoGraphCanvas';
 import Track01Studio from './panels/Track01Studio';
 import Track03Brain from './panels/Track03Brain';
+import RefactorStudio from './panels/RefactorStudio';
 import { LoadingScreen, ErrorScreen } from './panels/DataStates';
 
 type LoadState = 'loading' | 'ready' | 'error';
@@ -590,6 +591,10 @@ export default function App() {
             setSelectedNodeId={setSelectedNodeId}
             setActiveTab={setActiveTab}
           />
+        )}
+
+        {activeTab === 'refactor' && (
+          <RefactorStudio repo={activeRepoId} />
         )}
 
         {activeTab === 'backend' && (

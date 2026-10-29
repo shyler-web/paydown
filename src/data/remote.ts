@@ -511,3 +511,93 @@ export async function writeTrack2Graph(
 ): Promise<void> {
   await postJson('/api/track2/graph', { tenant, nodes, edges });
 }
+
+// ---------------------------------------------------------------------------
+// Clarify — cognitive-debt analyze / refactor / explain (Phase 3).
+// ---------------------------------------------------------------------------
+
+export interface ClarifySignal {
+  risk: number;
+  contribution: number;
+  evidence: Record<string, number | boolean>;
+}
+
+export interface ClarifyFile {
+  path: string;
+  score: number;
+  signals: Record<string, ClarifySignal>;
+}
+
+export interface ClarifyAnalysis {
+  repo: string;
+  path: string;
+  debt_index: number;
+  total_ranked: number;
+  skipped: number;
+  files: ClarifyFile[];
+  methodology: Record<string, unknown>;
+}
+
+export interface ClarifyValidation {
+  accepted: boolean;
+  behavior_verified: boolean;
+  checks: Record<string, boolean>;
+  before_score: number;
+  after_score: number;
+  score_drop: number;
+  structural_drop: number;
+  note: string;
+}
+
+export interface ClarifyProposal {
+  repo: string;
+  target: string;
+  status: string;
+  behavior_verified: boolean;
+  summary: string;
+  intent_note: string;
+  reviewer_question: string;
+  proposed_source: string;
+  diff: string;
+  proposal_sha256: string;
+  before_score: number;
+  after_score: number;
+  validation: ClarifyValidation;
+}
+
+export interface ClarifyExplanation {
+  repo: string;
+  target: string;
+  level: number;
+  answer: string;
+  score: number;
+  evidence: Record<string, unknown>;
+}
+
+/** Rank a loaded repo's Python files by the A/B/E comprehension-risk proxy. */
+export async function fetchClarifyAnalyze(
+  repo: string,
+  limit = 50
+): Promise<ClarifyAnalysis> {
+  return getJson<ClarifyAnalysis>(
+    `/api/clarify/analyze?repo=${encodeURIComponent(repo)}&limit=${limit}`
+  );
+}
+
+/** Propose a refactor and score-validate it (behavior verified only with Docker). */
+export async function proposeClarifyRefactor(
+  repo: string,
+  target: string
+): Promise<ClarifyProposal> {
+  return postJson<ClarifyProposal>('/api/clarify/refactor', { repo, target });
+}
+
+/** Explain one file at a reader level (L0..L5) via Nebius Nemotron. */
+export async function explainClarifyFile(
+  repo: string,
+  target: string,
+  level: number
+): Promise<ClarifyExplanation> {
+  return postJson<ClarifyExplanation>('/api/clarify/explain', { repo, target, level });
+}
+
