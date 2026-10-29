@@ -16,6 +16,7 @@ from .guidance import router as guidance_router
 from .models import EdgesResponse, NodesResponse, TenantsResponse
 from .observability import span
 from .repos import router as repos_router
+from .routes_memory import router as memory_router
 from .routes_tracks import router as tracks_router
 
 app = FastAPI(
@@ -28,6 +29,7 @@ app = FastAPI(
 app.include_router(tracks_router)
 # Any-repo loading (D10 extension) + graph-grounded guidance (Option B).
 app.include_router(repos_router)
+app.include_router(memory_router)
 app.include_router(guidance_router)
 
 

@@ -37,6 +37,7 @@ from .errors import missing_artifact, service_error
 from .falkor_brain import FalkorBrain
 from .graph_sync import load_graph
 from .observability import span
+from .repo_memory import bootstrap_repo_memory
 
 router = APIRouter(prefix="/api/repos", tags=["repos"])
 
@@ -77,6 +78,11 @@ def _repo_name_and_slug(url: str) -> tuple[str, str]:
 def _cache_dir() -> Path:
     """Clone cache root; ``REPO_CACHE_DIR`` wins (containers/tests)."""
     return Path(os.environ.get("REPO_CACHE_DIR", str(DEFAULT_CACHE_DIR)))
+
+
+def repo_cache_path(slug: str) -> Path:
+    """Local clone path for a loaded repo (``<cache>/<slug>``)."""
+    return _cache_dir() / slug
 
 
 def _clone_repo(url: str, slug: str) -> Path:
@@ -161,6 +167,25 @@ def load_repo(url: str) -> dict[str, object]:
             brain.ingest_docs(slug, target)
 
             _register_repo(slug, name, url)
+
+            # Repo-scoped agent memory (Phase 2): real Turns/Facts/Workflow/
+            # Handoffs + ConceptNode projection in `tenant:repo-<slug>`. Best-effort
+            # so a memory bug never fails the repo load; FalkorDB failures would
+            # already have surfaced above.
+            try:
+                memory: dict[str, object] = bootstrap_repo_memory(
+                    slug,
+                    target,
+                    name=name,
+                    code_stats={
+                        "files": stats.files,
+                        "symbols": stats.symbols,
+                        "commits": commits.commits,
+                        "owners": commits.people,
+                    },
+                )
+            except Exception as exc:  # pragma: no cover - defensive
+                memory = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
     except HTTPException:
         raise
     except Exception as exc:  # pragma: no cover - exercised by stopping FalkorDB
@@ -175,6 +200,7 @@ def load_repo(url: str) -> dict[str, object]:
         "nodes_total": stats.nodes_total,
         "commits": commits.commits,
         "owners": commits.people,
+        "memory": memory,
     }
 
 
