@@ -27,14 +27,17 @@ services:
       FALKORDB_HOST: falkordb
       FALKORDB_PORT: "6379"
       REPO_ROOT: /repo           # routes_tracks resolves artifacts here
+      REPO_CACHE_DIR: /app/.repos  # persist "load any repo" clones across restarts
     # Track 01/03 sync needs the live AST graph and git history; ingest_docs
     # reads the on-disk docs. Read-only so the demo cannot mutate the checkout.
+    # The repo cache is writable (git clone + graphify) and survives restarts.
     volumes:
       - ./graphify-out:/repo/graphify-out:ro
       - ./.git:/repo/.git:ro
       - ./docs:/repo/docs:ro
       - ./reference:/repo/reference:ro
       - ./lessons:/repo/lessons:ro
+      - repo-cache:/app/.repos
     # No host port: nginx (frontend) reaches it as http://backend:8000 on the
     # compose network. Avoids colliding with a host-run `uvicorn` on 8000.
     depends_on:
@@ -51,3 +54,4 @@ services:
 
 volumes:
   falkordb-data:
+  repo-cache:

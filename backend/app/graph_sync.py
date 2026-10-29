@@ -13,6 +13,7 @@ Only ``int`` values for ``LIMIT``/``*..N`` are ever inlined (and those live in
 from __future__ import annotations
 
 import json
+import os
 import re
 import time
 from pathlib import Path
@@ -23,7 +24,9 @@ from . import db
 from .config import FalkorDBConfig
 from .observability import span
 
-DEFAULT_REPO_ID = "graphhacks"
+#: Fallback repo id when a caller omits one. Configurable via ``DEFAULT_REPO_ID``
+#: so a deployment is not pinned to the bundled GraphHacks demo repo.
+DEFAULT_REPO_ID = (os.environ.get("DEFAULT_REPO_ID") or "graphhacks").strip()
 
 # graphify relation -> FalkorDB relationship type (B1 spec).
 REL_MAP: dict[str, str] = {

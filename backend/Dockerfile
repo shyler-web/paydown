@@ -8,7 +8,7 @@ FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
     PYTHONUNBUFFERED=1 \
-    PATH="/app/.venv/bin:$PATH" \
+    PATH="/app/.venv/bin:/root/.local/bin:$PATH" \
     FALKORDB_HOST=falkordb \
     FALKORDB_PORT=6379 \
     REPO_ROOT=/repo
@@ -24,6 +24,11 @@ RUN apt-get update \
 # Dependencies first so this layer caches across app-only edits.
 COPY backend/pyproject.toml backend/uv.lock ./
 RUN uv sync --frozen --no-dev
+
+# "Load any GitHub repo" shells out to the graphify CLI (`POST /api/repos/load`).
+# Install it as a uv tool so the containerised demo can build an AST graph for
+# arbitrary public repos, not just the bundled `graphify-out/graph.json`.
+RUN uv tool install graphifyy
 
 # Application code (app/ to serve, scripts/ for seeding via `compose exec`).
 COPY backend/app ./app
