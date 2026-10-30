@@ -208,6 +208,10 @@ checklist and smoke tests: **[`docs/DEPLOY.md`](./docs/DEPLOY.md)**.
 **No domain or VM?** Use the free, no-card stack (Vercel + Render free + FalkorDB
 Cloud free): **[`docs/DEPLOY-FREE.md`](./docs/DEPLOY-FREE.md)**.
 
+**Prefer a real always-on VM (no sleep, no 100 MB cap)?** Oracle Cloud Always Free
+(2 Arm OCPU / 12 GB) + a free sslip.io/DuckDNS hostname:
+**[`docs/DEPLOY-ORACLE.md`](./docs/DEPLOY-ORACLE.md)**.
+
 ## The cognitive-debt score (A/B/E)
 
 Each Python file gets a **0–100** risk score. It is deterministic and tokenless:
