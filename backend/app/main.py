@@ -7,7 +7,10 @@ event loop. LangSmith tracing hooks in through ``app.observability.span`` (D3).
 
 from __future__ import annotations
 
+import os
+
 from fastapi import Body, FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 
 from . import cockpit, llm, search
 from .db import HEALTH_GRAPH, count_nodes
@@ -25,6 +28,21 @@ app = FastAPI(
     version="0.1.0",
     description="Python backend + FalkorDB memory service (decision D8).",
 )
+
+# CORS is off by default (the nginx/Vite proxy is same-origin). Set CORS_ORIGINS
+# to a comma-separated allowlist when the frontend is hosted on another origin.
+_cors_origins = [
+    origin.strip()
+    for origin in (os.environ.get("CORS_ORIGINS") or "").split(",")
+    if origin.strip()
+]
+if _cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_cors_origins,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type", "Accept", "X-Demo-Code"],
+    )
 
 # Track 01 (code:<repoId>) + Track 03 (company:brain) routes (D10).
 app.include_router(tracks_router)

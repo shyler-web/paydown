@@ -29,10 +29,11 @@ import time
 from pathlib import Path
 from urllib.parse import urlparse
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from . import db
+from .deps import require_demo_code
 from .errors import missing_artifact, service_error
 from .falkor_brain import FalkorBrain
 from .graph_sync import load_graph
@@ -73,6 +74,29 @@ def _repo_name_and_slug(url: str) -> tuple[str, str]:
         name = name[:-4]
     slug = _SLUG_RE.sub("-", name.lower()).strip("-") or "repo"
     return name, slug
+
+
+_ALLOWED_HOSTS = {"github.com", "www.github.com"}
+
+
+def _validate_repo_url(url: str) -> None:
+    """Only clone public GitHub HTTPS repos — never local paths or other hosts.
+
+    Prevents SSRF / local-path clones on a public demo. ``git clone`` still runs
+    as a subprocess, so the URL must be a plain repo URL with no credentials.
+    """
+    parsed = urlparse((url or "").strip())
+    parts = [p for p in parsed.path.split("/") if p]
+    if (
+        parsed.scheme != "https"
+        or parsed.netloc.lower() not in _ALLOWED_HOSTS
+        or len(parts) != 2
+        or "@" in parsed.netloc
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="only public https://github.com/<owner>/<repo> URLs are supported",
+        )
 
 
 def _cache_dir() -> Path:
@@ -151,6 +175,9 @@ def load_repo(url: str) -> dict[str, object]:
     """
     name, slug = _repo_name_and_slug(url)
 
+    # Validate before any filesystem or subprocess work.
+    _validate_repo_url(url)
+
     # Non-FalkorDB steps (clone / graphify). These raise 409 directly.
     target = _clone_repo(url, slug)
     graph_json = _graphify_repo(target, slug)
@@ -205,7 +232,9 @@ def load_repo(url: str) -> dict[str, object]:
 
 
 @router.post("/load")
-def api_load_repo(body: RepoLoadRequest) -> dict[str, object]:
+def api_load_repo(
+    body: RepoLoadRequest, _code: str | None = Depends(require_demo_code)
+) -> dict[str, object]:
     """Load an arbitrary GitHub repo into ``code:<slug>`` + ``company:brain``."""
     return load_repo(body.url)
 

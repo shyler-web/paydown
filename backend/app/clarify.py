@@ -34,7 +34,6 @@ from .observability import span
 from .refactor_agent import (
     MAX_SOURCE_CHARS,
     AgentError,
-    _live_generate,
     _review_text,
     _system_prompt,
     _user_prompt,
@@ -210,6 +209,7 @@ def propose_refactor(
     target: str,
     *,
     generator: Generate | None = None,
+    max_tokens: int | None = None,
 ) -> dict[str, object]:
     """Propose a behaviour-preserving refactor and score-validate it (Option C)."""
     root = _required_path(slug)
@@ -219,10 +219,14 @@ def propose_refactor(
         raise ValueError(f"target exceeds {MAX_SOURCE_CHARS} characters")
     before = score_python_source(original, target)
 
+    system, user = _system_prompt(), _user_prompt(target, original, before)
     try:
-        proposal = (generator or _live_generate)(
-            _system_prompt(), _user_prompt(target, original, before)
-        )
+        if generator is not None:
+            proposal = generator(system, user)
+        else:
+            proposal = llm.generate_json(
+                system, user, temperature=0.2, max_tokens=max_tokens
+            )
     except llm.LLMUnavailable as exc:
         raise AgentError(f"Nebius generation unavailable: {exc}") from exc
 
@@ -275,7 +279,9 @@ def propose_refactor(
     }
 
 
-def explain_file(slug: str, target: str, level: int = 3) -> dict[str, object]:
+def explain_file(
+    slug: str, target: str, level: int = 3, *, max_tokens: int | None = None
+) -> dict[str, object]:
     """Explain one file at a reader level (L0..L5) grounded in its A/B/E evidence."""
     root = _required_path(slug)
     target_path = _inside(root, target)
@@ -306,7 +312,9 @@ def explain_file(slug: str, target: str, level: int = 3) -> dict[str, object]:
         "</untrusted_source>"
     )
     with span("clarify.explain"):
-        answer = llm.chat_completion(system, user, temperature=0.3)
+        answer = llm.chat_completion(
+            system, user, temperature=0.3, max_tokens=max_tokens
+        )
     return {
         "repo": slug,
         "target": target,

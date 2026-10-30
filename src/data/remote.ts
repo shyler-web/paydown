@@ -25,6 +25,32 @@ export class ApiError extends Error {
   }
 }
 
+// --- Demo access code (optional; set when the backend enforces one) ----------
+const DEMO_CODE_KEY = 'paydown.demoCode';
+
+export function getDemoCode(): string {
+  try {
+    return localStorage.getItem(DEMO_CODE_KEY) || '';
+  } catch {
+    return '';
+  }
+}
+
+export function setDemoCode(code: string): void {
+  try {
+    const value = code.trim();
+    if (value) localStorage.setItem(DEMO_CODE_KEY, value);
+    else localStorage.removeItem(DEMO_CODE_KEY);
+  } catch {
+    /* storage unavailable — the demo simply runs without a code */
+  }
+}
+
+function demoHeaders(): Record<string, string> {
+  const code = getDemoCode();
+  return code ? { 'X-Demo-Code': code } : {};
+}
+
 interface NodesPayload {
   tenant: string;
   nodes: ConceptNode[];
@@ -45,7 +71,9 @@ interface TenantsPayload {
 async function getJson<T>(url: string): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(url, { headers: { Accept: 'application/json' } });
+    response = await fetch(url, {
+      headers: { Accept: 'application/json', ...demoHeaders() }
+    });
   } catch (err) {
     // Network-level failure (backend down, proxy refused, ...).
     throw new ApiError(`Cannot reach the backend: ${(err as Error).message}`, 0);
@@ -108,7 +136,8 @@ async function postJson<T>(url: string, body?: unknown): Promise<T> {
       method: 'POST',
       headers: {
         Accept: 'application/json',
-        ...(body === undefined ? {} : { 'Content-Type': 'application/json' })
+        ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+        ...demoHeaders()
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) })
     });

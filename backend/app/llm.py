@@ -51,6 +51,7 @@ def chat_completion(
     *,
     json_mode: bool = False,
     temperature: float = 0.4,
+    max_tokens: int | None = None,
 ) -> str:
     """One turn against Nebius; returns the assistant text (a JSON string when
     ``json_mode`` is set)."""
@@ -66,6 +67,8 @@ def chat_completion(
         ],
         "temperature": temperature,
     }
+    if max_tokens is not None and max_tokens > 0:
+        body["max_tokens"] = int(max_tokens)
     if json_mode:
         body["response_format"] = {"type": "json_object"}
 

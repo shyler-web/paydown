@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Github, Play, RefreshCw } from 'lucide-react';
+import { Github, KeyRound, Play, RefreshCw } from 'lucide-react';
+import { getDemoCode, setDemoCode } from '../data/remote';
 
 /** Repo bar: pick an already-loaded repo or paste a GitHub URL to load a new one. */
 export default function ControlPanel(props: any) {
@@ -13,6 +14,7 @@ export default function ControlPanel(props: any) {
     onLoadRepo
   } = props;
   const [repoUrl, setRepoUrl] = useState('');
+  const [demoCode, setDemoCodeState] = useState(getDemoCode());
 
   return (
     <section className="bg-slate-900/50 border-b border-slate-800/80 px-4 py-3">
@@ -71,6 +73,20 @@ export default function ControlPanel(props: any) {
             {repoNote}
           </span>
         )}
+
+        <div className="ml-auto flex items-center gap-1.5">
+          <KeyRound className="w-3.5 h-3.5 text-amber-400" />
+          <input
+            type="password"
+            value={demoCode}
+            onChange={(e) => {
+              setDemoCodeState(e.target.value);
+              setDemoCode(e.target.value);
+            }}
+            placeholder="Demo access code (if required)"
+            className="bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 w-56"
+          />
+        </div>
       </div>
     </section>
   );

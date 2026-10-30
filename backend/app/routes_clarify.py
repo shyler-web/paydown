@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from . import clarify, llm
+from . import clarify, llm, security
+from .deps import require_ai
 from .errors import service_error
 from .refactor_agent import AgentError
 
@@ -36,6 +37,12 @@ def _translate(exc: Exception) -> HTTPException:
     return service_error(exc)
 
 
+@router.get("/usage")
+def api_clarify_usage() -> dict[str, object]:
+    """Today's AI usage vs limits (safe, no secrets)."""
+    return security.usage()
+
+
 @router.get("/analyze")
 def api_clarify_analyze(
     repo: str = Query(..., min_length=1),
@@ -49,18 +56,35 @@ def api_clarify_analyze(
 
 
 @router.post("/refactor")
-def api_clarify_refactor(body: RefactorRequest) -> dict[str, object]:
+def api_clarify_refactor(
+    body: RefactorRequest, _code: str | None = Depends(require_ai)
+) -> dict[str, object]:
     """Propose a refactor and score-validate it (behavior verified only with Docker)."""
     try:
-        return clarify.propose_refactor(body.repo, body.target)
+        result = clarify.propose_refactor(
+            body.repo,
+            body.target,
+            max_tokens=security.max_tokens_per_call(),
+        )
     except Exception as exc:
         raise _translate(exc) from exc
+    security.record_ai_call(len(str(result.get("proposed_source", ""))) // 4)
+    return result
 
 
 @router.post("/explain")
-def api_clarify_explain(body: ExplainRequest) -> dict[str, object]:
+def api_clarify_explain(
+    body: ExplainRequest, _code: str | None = Depends(require_ai)
+) -> dict[str, object]:
     """Explain one file at a reader level (L0..L5) via Nebius Nemotron."""
     try:
-        return clarify.explain_file(body.repo, body.target, level=body.level)
+        result = clarify.explain_file(
+            body.repo,
+            body.target,
+            level=body.level,
+            max_tokens=security.max_tokens_per_call(),
+        )
     except Exception as exc:
         raise _translate(exc) from exc
+    security.record_ai_call(len(str(result.get("answer", ""))) // 4)
+    return result
