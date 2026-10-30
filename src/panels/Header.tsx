@@ -1,8 +1,15 @@
-import { Network, Database, Terminal, BrainCircuit, Sliders, Crosshair, Building2, Wand2 } from 'lucide-react';
-import { getFirstNodeId } from '../data';
+import { Network, Database, Terminal, BrainCircuit, Wand2, LayoutDashboard } from 'lucide-react';
+
+const TABS = [
+  { id: 'analyze', label: 'Analyze', icon: LayoutDashboard },
+  { id: 'refactor', label: 'Refactor', icon: Wand2 },
+  { id: 'memory', label: 'Memory', icon: BrainCircuit },
+  { id: 'status', label: 'Status', icon: Terminal }
+];
 
 export default function Header(props: any) {
-  const { tenants, activeTenantKey, setActiveTenantKey, setSelectedNodeId, activeTab, setActiveTab, currentTenant } = props;
+  const { tenants, activeTenantKey, setActiveTenantKey, activeTab, setActiveTab } = props;
+  const keys = Object.keys(tenants || {});
 
   return (
     <header className="border-b border-slate-800/80 bg-slate-900/80 backdrop-blur-md sticky top-0 z-30 px-4 py-3">
@@ -13,106 +20,49 @@ export default function Header(props: any) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold tracking-tight text-white">GraphSync</h1>
+              <h1 className="text-lg font-bold tracking-tight text-white">Paydown</h1>
               <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                FalkorDB Track 02 • Agent Memory & Coordination
+                Cognitive-debt cockpit
               </span>
             </div>
-            <p className="text-xs text-slate-400">
-              Solving Cognitive Debt via 17 Domain Lenses × 6 Builder Maturity Levels (L0 Vibe Coder → L5 Principal)
+            <p className="text-[11px] text-slate-400">
+              Analyze any Python repo · propose a safe refactor · remember what the agents did
             </p>
           </div>
         </div>
 
-        {/* Multi-Tenant Graph Switcher (Requirement #5) */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5">
-            <Database className="w-4 h-4 text-pink-400" />
-            <span className="text-xs text-slate-400">FalkorDB Tenant:</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+            <Database className="w-3.5 h-3.5 text-pink-400" />
             <select
               value={activeTenantKey}
-              onChange={(e) => {
-                setActiveTenantKey(e.target.value);
-                setSelectedNodeId(getFirstNodeId(tenants, e.target.value));
-              }}
-              className="bg-transparent text-xs font-mono text-white focus:outline-none cursor-pointer"
+              onChange={(e) => setActiveTenantKey(e.target.value)}
+              className="bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-xs font-mono text-white focus:outline-none cursor-pointer max-w-[280px]"
             >
-              {Object.entries(tenants).map(([key, t]: [string, any]) => (
+              {keys.length === 0 && <option value="">no workspaces yet</option>}
+              {keys.map((key) => (
                 <option key={key} value={key} className="bg-slate-900 text-white">
-                  {t.name} ({key})
+                  {(tenants[key]?.name as string) || key} ({key})
                 </option>
               ))}
             </select>
           </div>
 
-          {/* View Switcher Tabs */}
           <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800">
-            <button
-              onClick={() => setActiveTab('cockpit')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition flex items-center gap-1.5 ${
-                activeTab === 'cockpit'
-                  ? 'bg-indigo-600 text-white shadow'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Sliders className="w-3.5 h-3.5" />
-              2D Graph Cockpit
-            </button>
-            <button
-              onClick={() => setActiveTab('memory')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition flex items-center gap-1.5 ${
-                activeTab === 'memory'
-                  ? 'bg-indigo-600 text-white shadow'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <BrainCircuit className="w-3.5 h-3.5" />
-              3-Tier Agent Memory ({currentTenant.episodes.length + currentTenant.playbooks.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('track01')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition flex items-center gap-1.5 ${
-                activeTab === 'track01'
-                  ? 'bg-indigo-600 text-white shadow'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Crosshair className="w-3.5 h-3.5" />
-              Track 01 · Action Studio
-            </button>
-            <button
-              onClick={() => setActiveTab('track03')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition flex items-center gap-1.5 ${
-                activeTab === 'track03'
-                  ? 'bg-indigo-600 text-white shadow'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Building2 className="w-3.5 h-3.5" />
-              Track 03 · Company Brain
-            </button>
-            <button
-              onClick={() => setActiveTab('refactor')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition flex items-center gap-1.5 ${
-                activeTab === 'refactor'
-                  ? 'bg-emerald-600 text-white shadow'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Wand2 className="w-3.5 h-3.5" />
-              Refactor Studio
-            </button>
-            <button
-              onClick={() => setActiveTab('backend')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition flex items-center gap-1.5 ${
-                activeTab === 'backend'
-                  ? 'bg-indigo-600 text-white shadow'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Terminal className="w-3.5 h-3.5" />
-              FalkorDB + Python Code
-            </button>
+            {TABS.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition flex items-center gap-1.5 ${
+                  activeTab === id
+                    ? 'bg-indigo-600 text-white shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {label}
+              </button>
+            ))}
           </div>
         </div>
       </div>

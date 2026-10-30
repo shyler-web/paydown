@@ -42,6 +42,11 @@ export default function RefactorStudio(props: any) {
   const [explaining, setExplaining] = useState(false);
 
   const load = useCallback(async () => {
+    if (!repo) {
+      setAnalysis(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     setProposal(null);
@@ -94,6 +99,14 @@ export default function RefactorStudio(props: any) {
       setExplaining(false);
     }
   };
+
+  if (!repo) {
+    return (
+      <div className="text-sm text-slate-400 border border-slate-800 rounded-2xl p-6">
+        Load a repository first: paste a public GitHub URL above and press “Load repo”.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
