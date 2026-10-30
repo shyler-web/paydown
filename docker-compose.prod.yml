@@ -1,0 +1,83 @@
+# Production-safe stack: only the TLS reverse proxy is public.
+#
+#   DOMAIN=paydown.example.com docker compose -f docker-compose.prod.yml up -d --build
+#
+# Differences from the local docker-compose.yml:
+#   * FalkorDB publishes NO host ports (internal network only).
+#   * The backend publishes NO host ports (reached only by nginx).
+#   * The frontend binds to 127.0.0.1 only; Caddy terminates TLS on 80/443.
+#   * Caddy obtains/renews Let's Encrypt certificates for $DOMAIN.
+#   * Publishing is hard-disabled; no GitHub token, no Docker socket.
+
+name: paydown
+
+services:
+  falkordb:
+    image: falkordb/falkordb:latest
+    # Intentionally no `ports:` — the graph DB is never exposed publicly.
+    volumes:
+      - falkordb-data:/var/lib/falkordb/data
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      FALKORDB_HOST: falkordb
+      FALKORDB_PORT: "6379"
+      REPO_ROOT: /repo
+      REPO_CACHE_DIR: /app/.repos
+      # Demo safety (override in .env)
+      AI_ENABLED: "${AI_ENABLED:-true}"
+      DEMO_ACCESS_CODE: "${DEMO_ACCESS_CODE:-}"
+      DEMO_MAX_CALLS_PER_DAY: "${DEMO_MAX_CALLS_PER_DAY:-100}"
+      DEMO_MAX_TOKENS_PER_CALL: "${DEMO_MAX_TOKENS_PER_CALL:-2000}"
+      DEMO_MAX_TOKENS_PER_DAY: "${DEMO_MAX_TOKENS_PER_DAY:-0}"
+      CLARIFY_PUBLISH_ENABLED: "false"
+      CORS_ORIGINS: "${CORS_ORIGINS:-}"
+    volumes:
+      - ./graphify-out:/repo/graphify-out:ro
+      - ./.git:/repo/.git:ro
+      - ./docs:/repo/docs:ro
+      - ./reference:/repo/reference:ro
+      - ./lessons:/repo/lessons:ro
+      - repo-cache:/app/.repos
+    depends_on:
+      - falkordb
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:5173:80"   # localhost only; Caddy proxies to it
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: "${DOMAIN:?set DOMAIN to your public hostname}"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - frontend
+    restart: unless-stopped
+
+volumes:
+  falkordb-data:
+  repo-cache:
+  caddy-data:
+  caddy-config:

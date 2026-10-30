@@ -185,6 +185,26 @@ npm run dev        # http://localhost:5173
 
 ---
 
+## Deployment (public demo)
+
+The local `docker-compose.yml` publishes FalkorDB on the host — fine for development,
+not for the internet. For a public demo use the **production stack**, which exposes
+only the TLS reverse proxy:
+
+```bash
+# on a small VM with a domain pointed at it
+DOMAIN=paydown.example.com docker compose -f docker-compose.prod.yml up -d --build
+```
+
+- FalkorDB and the backend publish **no host ports** (internal network only).
+- Caddy terminates HTTPS and renews certificates.
+- `CLARIFY_PUBLISH_ENABLED=false`, no `GITHUB_TOKEN`, no Docker socket.
+- Set `DEMO_ACCESS_CODE` and `DEMO_MAX_CALLS_PER_DAY` in `.env`; give the access code
+  to judges.
+
+Full runbook — **one VM + Caddy** or **Vercel + Render split** — with the security
+checklist and smoke tests: **[`docs/DEPLOY.md`](./docs/DEPLOY.md)**.
+
 ## The cognitive-debt score (A/B/E)
 
 Each Python file gets a **0–100** risk score. It is deterministic and tokenless:

@@ -51,6 +51,18 @@ function demoHeaders(): Record<string, string> {
   return code ? { 'X-Demo-Code': code } : {};
 }
 
+// Base URL for the backend. Empty = same-origin (nginx/Vite proxy, compose).
+// Set VITE_API_BASE at build time when the frontend is hosted separately
+// (e.g. Vercel static + Render backend): VITE_API_BASE=https://api.example.com
+const API_BASE = ((import.meta.env.VITE_API_BASE as string | undefined) || '').replace(
+  /\/+$/,
+  ''
+);
+
+function apiUrl(path: string): string {
+  return `${API_BASE}${path}`;
+}
+
 interface NodesPayload {
   tenant: string;
   nodes: ConceptNode[];
@@ -71,7 +83,7 @@ interface TenantsPayload {
 async function getJson<T>(url: string): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(url, {
+    response = await fetch(apiUrl(url), {
       headers: { Accept: 'application/json', ...demoHeaders() }
     });
   } catch (err) {
@@ -132,7 +144,7 @@ export async function loadTenants(): Promise<TenantMap> {
 async function postJson<T>(url: string, body?: unknown): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(url, {
+    response = await fetch(apiUrl(url), {
       method: 'POST',
       headers: {
         Accept: 'application/json',
