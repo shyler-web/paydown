@@ -272,6 +272,12 @@ export default function RefactorStudio(props: any) {
             <div className="rounded-2xl border border-indigo-500/30 bg-indigo-500/5 p-4">
               <div className="text-xs font-semibold text-indigo-300 mb-1">
                 Explanation · {LEVELS[explanation.level]}
+                {explanation.provider && (
+                  <span className="ml-2 font-mono text-[10px] text-cyan-300">
+                    {explanation.provider.name} · {explanation.provider.model} ·{' '}
+                    {explanation.provider.elapsed_ms} ms
+                  </span>
+                )}
               </div>
               <p className="text-sm text-slate-200 whitespace-pre-wrap">{explanation.answer}</p>
             </div>
@@ -296,6 +302,12 @@ export default function RefactorStudio(props: any) {
                 {!proposal.behavior_verified && (
                   <span className="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-full px-2 py-0.5 flex items-center gap-1">
                     <AlertTriangle className="w-3 h-3" /> Behavior not verified
+                  </span>
+                )}
+                {proposal.provider && (
+                  <span className="text-[11px] text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 rounded-full px-2 py-0.5 font-mono">
+                    {proposal.provider.name} · {proposal.provider.model} ·{' '}
+                    {proposal.provider.elapsed_ms} ms
                   </span>
                 )}
               </div>

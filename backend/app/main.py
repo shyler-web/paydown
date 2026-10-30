@@ -9,11 +9,12 @@ from __future__ import annotations
 
 import os
 
-from fastapi import Body, FastAPI, HTTPException, Query
+from fastapi import Body, Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import cockpit, llm, search
+from . import cockpit, llm, search, security
 from .db import HEALTH_GRAPH, count_nodes
+from .deps import require_ai, require_demo_code
 from .errors import missing_artifact, service_error
 from .guidance import router as guidance_router
 from .models import EdgesResponse, NodesResponse, TenantsResponse
@@ -131,10 +132,28 @@ def api_graph_edges(tenant: str = Query(..., min_length=1)) -> dict[str, object]
 # ---------------------------------------------------------------------------
 
 
-@app.post("/api/gemini/generate")
-def gemini_generate(payload: dict = Body(...)) -> object:
-    """Translate the Gemini-format payload to a Nebius chat completion and
-    return a Gemini-shaped response (``candidates[0].content.parts[0].text``)."""
+@app.get("/api/llm/info")
+def llm_info() -> dict[str, object]:
+    """Provider + model info for the UI badge (no secrets)."""
+    return {
+        "provider": "Nebius Token Factory",
+        "base_url": llm.base_url(),
+        "model": llm.model(),
+        "configured": llm.is_configured(),
+    }
+
+
+@app.post("/api/llm/generate")
+@app.post("/api/gemini/generate", include_in_schema=False)
+def llm_generate(
+    payload: dict = Body(...), _code: str | None = Depends(require_ai)
+) -> object:
+    """Translate the legacy Gemini payload shape to a Nebius chat completion.
+
+    Both paths share one handler: ``/api/llm/generate`` is the honest name;
+    ``/api/gemini/generate`` is kept as a compatibility alias for the old
+    frontend helper.
+    """
     if not llm.is_configured():
         raise HTTPException(
             status_code=503,
@@ -155,12 +174,15 @@ def gemini_generate(payload: dict = Body(...)) -> object:
         text = llm.chat_completion(system_text, user_text, json_mode=json_mode)
     except llm.LLMUnavailable as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
+    security.record_ai_call(len(text) // 4)
 
     return {"candidates": [{"content": {"parts": [{"text": text}]}}]}
 
 
 @app.post("/api/research")
-def research(payload: dict = Body(...)) -> object:
+def research(
+    payload: dict = Body(...), _code: str | None = Depends(require_demo_code)
+) -> object:
     """Web-grounded prior-art search via Tavily (replaces Gemini google_search).
 
     Returns cited sources (``uri``/``title``/``content``) so the L4/L5 "prior

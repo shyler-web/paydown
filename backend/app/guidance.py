@@ -23,10 +23,11 @@ import json
 import time
 from dataclasses import asdict
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from . import llm
+from . import llm, security
+from .deps import require_ai
 from .errors import service_error
 from .falkor_action import ActionEngine
 from .falkor_brain import FalkorBrain
@@ -183,7 +184,9 @@ def _user_prompt(repo: str, level: int, symbol: str | None, facts: dict) -> str:
 
 
 @router.post("/guidance")
-def guidance(body: GuidanceRequest) -> dict[str, object]:
+def guidance(
+    body: GuidanceRequest, _code: str | None = Depends(require_ai)
+) -> dict[str, object]:
     """Graph-grounded L0..L5 guidance for a repository.
 
     FalkorDB failure -> 503 (rule 3). LLM failure (missing key / upstream) ->
@@ -200,6 +203,7 @@ def guidance(body: GuidanceRequest) -> dict[str, object]:
 
     try:
         answer = llm.chat_completion(_system_prompt(level), _user_prompt(repo, level, symbol, facts))
+        security.record_ai_call(len(answer) // 4)
     except llm.LLMUnavailable:
         answer = None
 

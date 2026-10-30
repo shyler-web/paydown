@@ -45,6 +45,16 @@ def _model() -> str:
     return (os.environ.get("NEBIUS_MODEL") or "").strip() or DEFAULT_MODEL
 
 
+def model() -> str:
+    """The model id currently configured (safe to show in the UI)."""
+    return _model()
+
+
+def base_url() -> str:
+    """The Token Factory base URL (never contains a key)."""
+    return NEBIUS_BASE_URL
+
+
 def chat_completion(
     system: str,
     user: str,

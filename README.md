@@ -55,11 +55,52 @@ Follow the example configuration and commands in
 
 Docker needs a running daemon and a pre-pulled image containing the target
 repository's test dependencies. Test containers have no network access or
-provider credentials. **The 25 backend fixture tests passed locally**, but a
-live Docker run, Nebius model call, and GitHub CLI publication have not yet been
+provider credentials. **All backend tests pass locally (43+)**, but a live
+Docker run, Nebius model call, and GitHub CLI publication have not yet been
 verified for this Clarify workflow. Passing tests cover only their observed
 cases and do not prove full behavioral equivalence. The earlier cockpit demo
 links below demonstrate GraphHacks Nexus, not this Clarify workflow.
+
+## Nebius × NVIDIA — how the requirement is met
+
+This project runs on **Nebius Token Factory** and uses the **NVIDIA Nemotron**
+open model. Every LLM feature is a live inference call through one adapter:
+
+| Surface | Call site | What it does |
+|---|---|---|
+| Refactor proposal | `backend/app/clarify.py::propose_refactor` → `llm.generate_json` | Nemotron writes a behaviour-preserving replacement for one file |
+| Reader-level explanation | `backend/app/clarify.py::explain_file` → `llm.chat_completion` | Explains the file at L0–L5 |
+| Graph-grounded guidance | `backend/app/guidance.py` → `llm.chat_completion` | Explains the repo from real graph facts |
+| Legacy proxy | `backend/app/main.py` `/api/llm/generate` (alias `/api/gemini/generate`) | Cockpit coach/research |
+
+Provider configuration lives in **`backend/app/llm.py`**: `NEBIUS_BASE_URL`
+(default `https://api.tokenfactory.nebius.com/v1`) and `NEBIUS_MODEL` (default
+`nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B`). Keys are read server-side only; the
+browser never receives one.
+
+Verify the model id is available on your account:
+
+```bash
+cd backend
+NEBIUS_API_KEY=... uv run python scripts/probe_nebius.py
+```
+
+`GET /api/llm/info` returns the provider, model, and configured flag (no secrets),
+and the Refactor/Explain panels show a `Nebius Token Factory · <model> · <ms>`
+badge on each live call.
+
+**Track:** Coding & Agentic Engineering. **Caveat:** the score-only proposal path
+validates complexity, not behaviour; frozen-test/Docker verification is the strict
+path (see `backend/AGENT_WORKFLOW.md`).
+
+### Demo safety (public deployment)
+
+Token Factory has rate limits but no documented per-key spend cap, so the app
+enforces its own: `DEMO_ACCESS_CODE` (judges get it), `AI_ENABLED` kill switch,
+`DEMO_MAX_CALLS_PER_DAY`, `DEMO_MAX_TOKENS_PER_CALL`/`DAY`, and
+`CLARIFY_PUBLISH_ENABLED` (off by default). Repo loading accepts only public
+`https://github.com/<owner>/<repo>` URLs. AI-generated code never runs on the
+host; see `backend/app/security.py`.
 
 ### Work added during the current hackathon build
 

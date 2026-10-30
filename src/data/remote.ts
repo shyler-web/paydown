@@ -578,6 +578,12 @@ export interface ClarifyValidation {
   note: string;
 }
 
+export interface ClarifyProvider {
+  name: string;
+  model: string;
+  elapsed_ms: number;
+}
+
 export interface ClarifyProposal {
   repo: string;
   target: string;
@@ -591,6 +597,7 @@ export interface ClarifyProposal {
   proposal_sha256: string;
   before_score: number;
   after_score: number;
+  provider?: ClarifyProvider;
   validation: ClarifyValidation;
 }
 
@@ -601,6 +608,7 @@ export interface ClarifyExplanation {
   answer: string;
   score: number;
   evidence: Record<string, unknown>;
+  provider?: ClarifyProvider;
 }
 
 /** Rank a loaded repo's Python files by the A/B/E comprehension-risk proxy. */

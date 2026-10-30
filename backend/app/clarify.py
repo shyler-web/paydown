@@ -220,6 +220,7 @@ def propose_refactor(
     before = score_python_source(original, target)
 
     system, user = _system_prompt(), _user_prompt(target, original, before)
+    started = time.perf_counter()
     try:
         if generator is not None:
             proposal = generator(system, user)
@@ -229,6 +230,7 @@ def propose_refactor(
             )
     except llm.LLMUnavailable as exc:
         raise AgentError(f"Nebius generation unavailable: {exc}") from exc
+    elapsed_ms = round((time.perf_counter() - started) * 1000)
 
     if not isinstance(proposal, dict) or not isinstance(proposal.get("source"), str):
         raise AgentError("Model must return JSON containing complete Python 'source'")
@@ -275,6 +277,11 @@ def propose_refactor(
         "proposal_sha256": hashlib.sha256(replacement.encode("utf-8")).hexdigest(),
         "before_score": round(before.score, 2),
         "after_score": round(after.score, 2),
+        "provider": {
+            "name": "Nebius Token Factory",
+            "model": llm.model(),
+            "elapsed_ms": elapsed_ms,
+        },
         "validation": validation,
     }
 
@@ -312,9 +319,11 @@ def explain_file(
         "</untrusted_source>"
     )
     with span("clarify.explain"):
+        started = time.perf_counter()
         answer = llm.chat_completion(
             system, user, temperature=0.3, max_tokens=max_tokens
         )
+        elapsed_ms = round((time.perf_counter() - started) * 1000)
     return {
         "repo": slug,
         "target": target,
@@ -322,4 +331,9 @@ def explain_file(
         "answer": answer,
         "score": round(risk.score, 2),
         "evidence": evidence,
+        "provider": {
+            "name": "Nebius Token Factory",
+            "model": llm.model(),
+            "elapsed_ms": elapsed_ms,
+        },
     }
