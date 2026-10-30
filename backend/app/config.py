@@ -12,7 +12,7 @@ from dataclasses import dataclass
 
 DEFAULT_HOST = "localhost"
 DEFAULT_PORT = 6379
-DEFAULT_TIMEOUT = 5.0
+DEFAULT_TIMEOUT = 15.0
 
 
 def _env_bool(name: str, default: bool = False) -> bool:
