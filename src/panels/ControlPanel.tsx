@@ -63,6 +63,16 @@ export default function ControlPanel(props: any) {
           </button>
         </form>
 
+        <button
+          type="button"
+          onClick={() => onLoadRepo('https://github.com/shyler-web/volcano-monitoring-system')}
+          disabled={repoLoading}
+          className="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold"
+        >
+          Demo repo
+        </button>
+        <span className="text-[11px] text-slate-500">small demo · 100 MB free DB</span>
+
         {repoError && (
           <span className="text-[11px] text-rose-300 bg-rose-500/10 border border-rose-500/30 rounded-lg px-2 py-1">
             {repoError}
