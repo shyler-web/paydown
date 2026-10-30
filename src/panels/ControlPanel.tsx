@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { Github, KeyRound, Play, RefreshCw, Trash2 } from 'lucide-react';
-import { getDemoCode, setDemoCode } from '../data/remote';
+import { Github, Play, RefreshCw, Trash2 } from 'lucide-react';
 
 /** Repo bar: pick an already-loaded repo or paste a GitHub URL to load a new one. */
 export default function ControlPanel(props: any) {
@@ -15,7 +14,6 @@ export default function ControlPanel(props: any) {
     onDeleteRepo
   } = props;
   const [repoUrl, setRepoUrl] = useState('');
-  const [demoCode, setDemoCodeState] = useState(getDemoCode());
   const activeRepo = repos.find((r: any) => r.id === activeRepoId);
 
   return (
@@ -114,19 +112,6 @@ export default function ControlPanel(props: any) {
           </span>
         )}
 
-        <div className="ml-auto flex items-center gap-1.5">
-          <KeyRound className="w-3.5 h-3.5 text-amber-400" />
-          <input
-            type="password"
-            value={demoCode}
-            onChange={(e) => {
-              setDemoCodeState(e.target.value);
-              setDemoCode(e.target.value);
-            }}
-            placeholder="Demo access code (if required)"
-            className="bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 w-56"
-          />
-        </div>
       </div>
     </section>
   );
