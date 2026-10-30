@@ -41,4 +41,5 @@ COPY graphify-out/graph.json /repo/graphify-out/graph.json
 EXPOSE 8000
 
 # --no-sync: the venv is already built above; never hit the network at runtime.
-CMD ["uv", "run", "--no-sync", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Honor $PORT for managed hosts (Render/Railway), default to 8000 locally.
+CMD ["sh", "-c", "uv run --no-sync uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

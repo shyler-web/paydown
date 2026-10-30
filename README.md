@@ -205,6 +205,9 @@ DOMAIN=paydown.example.com docker compose -f docker-compose.prod.yml up -d --bui
 Full runbook — **one VM + Caddy** or **Vercel + Render split** — with the security
 checklist and smoke tests: **[`docs/DEPLOY.md`](./docs/DEPLOY.md)**.
 
+**No domain or VM?** Use the free, no-card stack (Vercel + Render free + FalkorDB
+Cloud free): **[`docs/DEPLOY-FREE.md`](./docs/DEPLOY-FREE.md)**.
+
 ## The cognitive-debt score (A/B/E)
 
 Each Python file gets a **0–100** risk score. It is deterministic and tokenless:
