@@ -40,7 +40,7 @@ from .refactor_agent import (
 )
 from .refactor_validation import _structural
 from .repo_memory import repo_tenant
-from .repos import repo_cache_path
+from .repos import ensure_repo_clone
 
 #: Same MVP thresholds as the strict validator.
 MIN_SCORE_DROP = 1.0
@@ -59,7 +59,7 @@ _READER_PERSONAS = {
 
 
 def _required_path(slug: str) -> Path:
-    path = repo_cache_path(slug)
+    path = ensure_repo_clone(slug)
     if not path.is_dir():
         raise FileNotFoundError(f"repo '{slug}' is not loaded (no clone at {path})")
     return path

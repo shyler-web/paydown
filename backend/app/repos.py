@@ -131,6 +131,35 @@ def _clone_repo(url: str, slug: str) -> Path:
     return target
 
 
+def ensure_repo_clone(slug: str) -> Path:
+    """Return the local clone, re-cloning from the registry if it vanished.
+
+    Free hosts (Render) have no persistent disk: a restart drops
+    ``<cache>/<slug>`` while the ``:Repo`` registry in FalkorDB survives. Re-clone
+    on demand so Analyze/Refactor keep working without re-loading the URL.
+    """
+    path = repo_cache_path(slug)
+    if path.is_dir():
+        return path
+    try:
+        with span("repos.ensure_clone"):
+            with db.named_graph(REPOS_GRAPH) as graph:
+                result = graph.query(
+                    "MATCH (r:Repo {id: $id}) RETURN r.url LIMIT 1",
+                    params={"id": slug},
+                )
+                rows = result.result_set or []
+    except Exception as exc:  # pragma: no cover - FalkorDB down
+        raise service_error(exc) from exc
+    url = str(rows[0][0]) if rows and rows[0] and rows[0][0] else ""
+    if not url:
+        raise missing_artifact(
+            f"repo '{slug}' is not loaded; load its GitHub URL first"
+        )
+    _validate_repo_url(url)
+    return _clone_repo(url, slug)
+
+
 def _graphify_repo(target: Path, slug: str) -> Path:
     """Build the AST graph via ``graphify update``; 409 on any failure."""
     try:

@@ -23,6 +23,8 @@ class ExplainRequest(RefactorRequest):
 
 
 def _translate(exc: Exception) -> HTTPException:
+    if isinstance(exc, HTTPException):
+        return exc
     if isinstance(exc, FileNotFoundError):
         return HTTPException(status_code=404, detail=str(exc))
     if isinstance(exc, ValueError):

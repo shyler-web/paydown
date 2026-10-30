@@ -53,7 +53,7 @@ class AnalyzeTests(unittest.TestCase):
             root = Path(tmp)
             (root / "a.py").write_text(COMPLEX, encoding="utf-8")
             (root / "test_a.py").write_text("def test_ok():\n    assert True\n", encoding="utf-8")
-            with patch("app.clarify.repo_cache_path", return_value=root):
+            with patch("app.clarify.ensure_repo_clone", return_value=root):
                 report = analyze_repo("demo", limit=10)
         paths = [f["path"] for f in report["files"]]
         self.assertIn("a.py", paths)
@@ -72,7 +72,7 @@ class ProposeTests(unittest.TestCase):
                 "intent_note": "This flattens the guard so the logic reads top-down instead of nested.",
                 "reviewer_question": "Does the flattened guard preserve behaviour for negative values?",
             }
-            with patch("app.clarify.repo_cache_path", return_value=root), patch(
+            with patch("app.clarify.ensure_repo_clone", return_value=root), patch(
                 "app.clarify._record_proposal"
             ):
                 result = propose_refactor("demo", "a.py", generator=lambda s, u: proposal)
