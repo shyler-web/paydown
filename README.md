@@ -1,5 +1,12 @@
 # Paydown
 
+
+## Live demo
+
+- App: https://paydown-pearl.vercel.app
+- Access code: `Nebiusjudge2026`
+- Click **Demo repo**, wait for it to load, then use **Analyze / Refactor / Memory**.
+
 **Pay down cognitive debt in any Python repo — analyze, refactor, and remember what the agents did.**
 
 [![Nebius Token Factory](https://img.shields.io/badge/AI-Nebius%20Token%20Factory-22d3ee.svg)](https://tokenfactory.nebius.com/)
