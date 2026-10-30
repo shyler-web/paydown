@@ -31,6 +31,7 @@ from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
+from redis.exceptions import ResponseError
 
 from . import db
 from .deps import require_demo_code
@@ -53,6 +54,7 @@ DEFAULT_CACHE_DIR = Path.home() / ".graphhacks-repos"
 # A slug is the repo name lowercased with anything outside [a-z0-9_-] folded to
 # ``-`` (never used in Cypher except as a *parameter* / ``code:<slug>`` key).
 _SLUG_RE = re.compile(r"[^a-z0-9_-]+")
+_SLUG_OK = re.compile(r"^[a-z0-9_-]{1,80}$")
 
 
 class RepoLoadRequest(BaseModel):
@@ -158,6 +160,33 @@ def ensure_repo_clone(slug: str) -> Path:
         )
     _validate_repo_url(url)
     return _clone_repo(url, slug)
+
+
+def delete_repo(slug: str) -> dict[str, object]:
+    """Delete a repo: registry row, memory graph, code graph, and cached clone.
+
+    ``company:brain`` rows are shared across repos and are left in place; they are
+    no longer referenced by the repo picker once the ``:Repo`` row is gone.
+    """
+    if not _SLUG_OK.fullmatch(slug or ""):
+        raise HTTPException(status_code=400, detail="invalid repo id")
+    graphs = [db.repo_graph_key(slug), db.tenant_graph_key(f"repo-{slug}")]
+    try:
+        for key in graphs:
+            with db.named_graph(key) as graph:
+                try:
+                    graph.delete()
+                except ResponseError:
+                    pass
+        with db.named_graph(REPOS_GRAPH) as graph:
+            graph.query(
+                "MATCH (r:Repo {id: $id}) DELETE r",
+                params={"id": slug},
+            )
+    except Exception as exc:  # pragma: no cover - exercised by stopping FalkorDB
+        raise service_error(exc) from exc
+    shutil.rmtree(repo_cache_path(slug), ignore_errors=True)
+    return {"deleted": slug, "graphs": graphs}
 
 
 def _graphify_repo(target: Path, slug: str) -> Path:
@@ -266,6 +295,14 @@ def api_load_repo(
 ) -> dict[str, object]:
     """Load an arbitrary GitHub repo into ``code:<slug>`` + ``company:brain``."""
     return load_repo(body.url)
+
+
+@router.delete("/{slug}")
+def api_delete_repo(
+    slug: str, _code: str | None = Depends(require_demo_code)
+) -> dict[str, object]:
+    """Delete a repo's registry row, memory/code graphs, and cached clone."""
+    return delete_repo(slug)
 
 
 @router.get("")

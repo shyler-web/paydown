@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Github, KeyRound, Play, RefreshCw } from 'lucide-react';
+import { Github, KeyRound, Play, RefreshCw, Trash2 } from 'lucide-react';
 import { getDemoCode, setDemoCode } from '../data/remote';
 
 /** Repo bar: pick an already-loaded repo or paste a GitHub URL to load a new one. */
@@ -11,7 +11,8 @@ export default function ControlPanel(props: any) {
     repoLoading,
     repoError,
     repoNote,
-    onLoadRepo
+    onLoadRepo,
+    onDeleteRepo
   } = props;
   const [repoUrl, setRepoUrl] = useState('');
   const [demoCode, setDemoCodeState] = useState(getDemoCode());
@@ -72,6 +73,23 @@ export default function ControlPanel(props: any) {
           Demo repo
         </button>
         <span className="text-[11px] text-slate-500">small demo · 100 MB free DB</span>
+
+        <button
+          type="button"
+          onClick={() => {
+            if (
+              activeRepoId &&
+              window.confirm(`Delete "${activeRepoId}" and its memory? This cannot be undone.`)
+            ) {
+              onDeleteRepo();
+            }
+          }}
+          disabled={!activeRepoId || repoLoading}
+          className="px-3 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white text-xs font-semibold flex items-center gap-1.5"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+          Clear repo
+        </button>
 
         {repoError && (
           <span className="text-[11px] text-rose-300 bg-rose-500/10 border border-rose-500/30 rounded-lg px-2 py-1">

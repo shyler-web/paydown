@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { loadTenants } from './data';
 import type { TenantMap } from './data';
-import { fetchRepos, loadRepo, type RepoSummary } from './data/remote';
+import { deleteRepo, fetchRepos, loadRepo, type RepoSummary } from './data/remote';
 import Header from './panels/Header';
 import ControlPanel from './panels/ControlPanel';
 import AnalyzeStudio from './panels/AnalyzeStudio';
@@ -90,6 +90,31 @@ export default function App() {
     }
   }, []);
 
+  const handleDeleteRepo = useCallback(async () => {
+    if (!activeRepoId) return;
+    setRepoLoading(true);
+    setRepoError(null);
+    setRepoNote(null);
+    const slug = activeRepoId;
+    try {
+      await deleteRepo(slug);
+      const [map, list] = await Promise.all([loadTenants(), fetchRepos()]);
+      setTenants(map);
+      setRepos(list);
+      const next = list[0]?.id ?? '';
+      setActiveRepoId(next);
+      const nextTenant = next ? `repo-${next}` : '';
+      setActiveTenantKey(
+        nextTenant && map[nextTenant] ? nextTenant : Object.keys(map)[0] ?? ''
+      );
+      setRepoNote(`Cleared ${slug}`);
+    } catch (err) {
+      setRepoError((err as Error).message || String(err));
+    } finally {
+      setRepoLoading(false);
+    }
+  }, [activeRepoId]);
+
   if (loadState === 'loading') {
     return <LoadingScreen />;
   }
@@ -124,6 +149,7 @@ export default function App() {
         repoError={repoError}
         repoNote={repoNote}
         onLoadRepo={handleLoadRepo}
+        onDeleteRepo={handleDeleteRepo}
       />
 
       <main className="flex-1 max-w-[1600px] w-full mx-auto p-4">

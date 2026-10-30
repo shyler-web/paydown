@@ -209,6 +209,29 @@ export async function loadRepo(url: string): Promise<RepoLoadResult> {
   return postJson<RepoLoadResult>('/api/repos/load', { url });
 }
 
+/** Delete a loaded repo, its memory/code graphs, and its cached clone. */
+export async function deleteRepo(repo: string): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetch(apiUrl(`/api/repos/${encodeURIComponent(repo)}`), {
+      method: 'DELETE',
+      headers: { Accept: 'application/json', ...demoHeaders() }
+    });
+  } catch (err) {
+    throw new ApiError(`Cannot reach the backend: ${(err as Error).message}`, 0);
+  }
+  if (!response.ok) {
+    let detail = `${response.status} ${response.statusText}`;
+    try {
+      const body = (await response.json()) as { detail?: string };
+      if (body?.detail) detail = body.detail;
+    } catch {
+      /* keep the status line */
+    }
+    throw new ApiError(detail, response.status);
+  }
+}
+
 // -- Grounded guidance + research (Nebius / Tavily) --------------------------
 //
 // The L0→L5 guidance is now grounded in the active repo's graph facts
