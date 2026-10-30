@@ -42,7 +42,16 @@ def repo_graph_key(repo_id: str) -> str:
 def connect(config: FalkorDBConfig | None = None) -> FalkorDB:
     """Open a short-lived FalkorDB client, as the Node service did per call."""
     cfg = config or FalkorDBConfig.from_env()
-    kwargs: dict[str, object] = {"host": cfg.host, "port": cfg.port}
+    kwargs: dict[str, object] = {
+        "socket_timeout": cfg.timeout,
+        "socket_connect_timeout": cfg.timeout,
+        "ssl": cfg.ssl,
+    }
+    if cfg.url:
+        kwargs["url"] = cfg.url
+    else:
+        kwargs["host"] = cfg.host
+        kwargs["port"] = cfg.port
     if cfg.username:
         kwargs["username"] = cfg.username
     if cfg.password:

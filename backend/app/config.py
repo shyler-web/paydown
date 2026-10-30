@@ -12,6 +12,14 @@ from dataclasses import dataclass
 
 DEFAULT_HOST = "localhost"
 DEFAULT_PORT = 6379
+DEFAULT_TIMEOUT = 5.0
+
+
+def _env_bool(name: str, default: bool = False) -> bool:
+    raw = (os.environ.get(name) or "").strip().lower()
+    if not raw:
+        return default
+    return raw in {"1", "true", "yes", "on"}
 
 
 @dataclass(frozen=True)
@@ -22,6 +30,9 @@ class FalkorDBConfig:
     port: int = DEFAULT_PORT
     username: str | None = None
     password: str | None = None
+    ssl: bool = False
+    timeout: float = DEFAULT_TIMEOUT
+    url: str | None = None
 
     @classmethod
     def from_env(cls) -> "FalkorDBConfig":
@@ -34,4 +45,23 @@ class FalkorDBConfig:
         # Optional; absent for the local unauthenticated Docker instance.
         username = os.environ.get("FALKORDB_USERNAME") or None
         password = os.environ.get("FALKORDB_PASSWORD") or None
-        return cls(host=host, port=port, username=username, password=password)
+        # Managed instances may require TLS even on a free tier; default off.
+        ssl = _env_bool("FALKORDB_SSL", False)
+        # Fail fast instead of hanging a request when the DB is unreachable.
+        try:
+            timeout = float(os.environ.get("FALKORDB_TIMEOUT") or DEFAULT_TIMEOUT)
+        except ValueError:
+            timeout = DEFAULT_TIMEOUT
+        if timeout <= 0:
+            timeout = DEFAULT_TIMEOUT
+        # Optional full connection string (redis://user:pass@host:port).
+        url = (os.environ.get("FALKORDB_URL") or "").strip() or None
+        return cls(
+            host=host,
+            port=port,
+            username=username,
+            password=password,
+            ssl=ssl,
+            timeout=timeout,
+            url=url,
+        )

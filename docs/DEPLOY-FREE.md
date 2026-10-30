@@ -46,6 +46,9 @@ Free tier has **no TLS**, which matches the backend's plain host/port config.
    FALKORDB_PORT=<falkordb-port>
    FALKORDB_USERNAME=            # only if the free instance shows one
    FALKORDB_PASSWORD=
+   FALKORDB_SSL=false            # set true if the instance requires TLS
+   FALKORDB_TIMEOUT=5            # fail fast instead of hanging
+   # FALKORDB_URL=redis://user:pass@host:port   # alternative to host/port
    NEBIUS_API_KEY=<your key>
    NEBIUS_MODEL=nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B
    AI_ENABLED=true
@@ -61,6 +64,11 @@ Free tier has **no TLS**, which matches the backend's plain host/port config.
    ```
 
 The backend Dockerfile honors Render's `$PORT`, so no port change is needed.
+
+> **If `/api/health` hangs or returns 503:** the FalkorDB values are wrong or the
+> instance needs TLS. Double-check host (no `redis://`, no `:port`) and port, then
+> try `FALKORDB_SSL=true`. Health now times out after `FALKORDB_TIMEOUT` seconds
+> (default 5) instead of hanging.
 
 ---
 
