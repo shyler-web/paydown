@@ -16,6 +16,7 @@ export default function ControlPanel(props: any) {
   } = props;
   const [repoUrl, setRepoUrl] = useState('');
   const [demoCode, setDemoCodeState] = useState(getDemoCode());
+  const activeRepo = repos.find((r: any) => r.id === activeRepoId);
 
   return (
     <section className="bg-slate-900/50 border-b border-slate-800/80 px-4 py-3">
@@ -34,6 +35,17 @@ export default function ControlPanel(props: any) {
             </option>
           ))}
         </select>
+        {activeRepo?.url && (
+          <a
+            href={activeRepo.url}
+            target="_blank"
+            rel="noreferrer"
+            title={activeRepo.url}
+            className="text-[11px] font-mono text-cyan-300 hover:text-cyan-200 underline underline-offset-2 truncate max-w-[360px]"
+          >
+            {activeRepo.url}
+          </a>
+        )}
 
         <form
           onSubmit={(e) => {
