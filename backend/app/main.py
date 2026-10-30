@@ -90,16 +90,14 @@ def api_health() -> dict[str, object]:
 
 @app.get("/api/tenants", response_model=TenantsResponse)
 def api_tenants() -> dict[str, object]:
-    """The tenant registry (``:Tenant`` nodes in ``db.REGISTRY_GRAPH``)."""
+    """The repo-scoped tenant registry (``:Tenant`` nodes with a ``repo``)."""
     try:
         with span("api.tenants"):
             tenants = cockpit.list_tenants()
     except Exception as exc:  # pragma: no cover - exercised by stopping FalkorDB
         raise service_error(exc) from exc
-    if not tenants:
-        raise missing_artifact(
-            "No tenants seeded — run `cd backend && uv run python scripts/seed_cockpit.py`"
-        )
+    # A fresh instance has no tenants; the UI must still load so the user can
+    # paste a repo URL (loading a repo creates tenant:repo-<slug>).
     return {"tenants": tenants}
 
 
