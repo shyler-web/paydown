@@ -31,6 +31,10 @@ services:
       - key: AI_ENABLED
         value: "true"
 
+      # Tavily web grounding (enables the "Research (Tavily)" button)
+      - key: TAVILY_API_KEY
+        sync: false
+
       # Demo safety
       - key: DEMO_ACCESS_CODE
         sync: false

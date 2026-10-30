@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   Loader2,
   RefreshCw,
+  Search,
   Sparkles,
   Wand2,
   XCircle
@@ -11,11 +12,13 @@ import {
 import {
   explainClarifyFile,
   fetchClarifyAnalyze,
+  fetchResearch,
   proposeClarifyRefactor,
   type ClarifyAnalysis,
   type ClarifyExplanation,
   type ClarifyFile,
-  type ClarifyProposal
+  type ClarifyProposal,
+  type ResearchResponse
 } from '../data/remote';
 
 const LEVELS = ['L0 Vibe', 'L1 PM', 'L2 Junior', 'L3 Full-Stack', 'L4 Senior', 'L5 Principal'];
@@ -40,6 +43,8 @@ export default function RefactorStudio(props: any) {
   const [level, setLevel] = useState(3);
   const [explanation, setExplanation] = useState<ClarifyExplanation | null>(null);
   const [explaining, setExplaining] = useState(false);
+  const [research, setResearch] = useState<ResearchResponse | null>(null);
+  const [researching, setResearching] = useState(false);
 
   const load = useCallback(async () => {
     if (!repo) {
@@ -51,6 +56,7 @@ export default function RefactorStudio(props: any) {
     setError(null);
     setProposal(null);
     setExplanation(null);
+    setResearch(null);
     try {
       const data = await fetchClarifyAnalyze(repo, 50);
       setAnalysis(data);
@@ -97,6 +103,25 @@ export default function RefactorStudio(props: any) {
       setActionError((err as Error).message || String(err));
     } finally {
       setExplaining(false);
+    }
+  };
+
+  const researchFile = async () => {
+    if (!selected) return;
+    setResearching(true);
+    setActionError(null);
+    setResearch(null);
+    const a = (selected.signals['A']?.contribution ?? 0).toFixed(1);
+    const b = (selected.signals['B']?.contribution ?? 0).toFixed(1);
+    const query =
+      `Python refactor best practices and common pitfalls for ${selected.path} ` +
+      `(control-flow risk ${a}, size/branching risk ${b})`;
+    try {
+      setResearch(await fetchResearch(query));
+    } catch (err) {
+      setActionError((err as Error).message || String(err));
+    } finally {
+      setResearching(false);
     }
   };
 
@@ -179,6 +204,7 @@ export default function RefactorStudio(props: any) {
                     setSelectedPath(f.path);
                     setProposal(null);
                     setExplanation(null);
+                    setResearch(null);
                   }}
                   className={`w-full text-left rounded-lg border px-2.5 py-2 transition ${
                     active
@@ -238,6 +264,14 @@ export default function RefactorStudio(props: any) {
                   {explaining ? 'Explaining…' : 'Explain file'}
                 </button>
                 <button
+                  onClick={() => void researchFile()}
+                  disabled={!selected || researching}
+                  className="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white text-xs font-semibold flex items-center gap-1.5"
+                >
+                  <Search className="w-3.5 h-3.5" />
+                  {researching ? 'Searching…' : 'Research (Tavily)'}
+                </button>
+                <button
                   onClick={() => void propose()}
                   disabled={!selected || proposing}
                   className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-semibold flex items-center gap-1.5"
@@ -280,6 +314,37 @@ export default function RefactorStudio(props: any) {
                 )}
               </div>
               <p className="text-sm text-slate-200 whitespace-pre-wrap">{explanation.answer}</p>
+            </div>
+          )}
+
+          {research && (
+            <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/5 p-4">
+              <div className="text-xs font-semibold text-cyan-300 mb-1">
+                Web grounding · Tavily
+              </div>
+              <div className="text-[11px] text-slate-400 mb-2 break-words">
+                Query: {research.query}
+              </div>
+              <div className="space-y-2">
+                {research.sources.map((source) => (
+                  <a
+                    key={source.uri}
+                    href={source.uri}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block rounded-lg border border-slate-800 bg-slate-950/60 p-2 hover:border-cyan-500/40 transition"
+                  >
+                    <div className="text-xs font-semibold text-white truncate">
+                      {source.title || source.uri}
+                    </div>
+                    <div className="text-[11px] text-slate-400 line-clamp-2">{source.content}</div>
+                    <div className="text-[10px] font-mono text-cyan-400 truncate">{source.uri}</div>
+                  </a>
+                ))}
+                {research.sources.length === 0 && (
+                  <div className="text-xs text-slate-500">No sources returned.</div>
+                )}
+              </div>
             </div>
           )}
 
