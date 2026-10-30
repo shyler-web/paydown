@@ -30,6 +30,7 @@ from .observability import span
 
 _TENANTS_CYPHER = """
 MATCH (t:Tenant)
+WHERE t.repo IS NOT NULL
 RETURN t.key AS key, t.name AS name
 ORDER BY key ASC
 """
