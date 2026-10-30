@@ -1,0 +1,46 @@
+# Render Blueprint — one-click backend for Paydown.
+# Render dashboard → New → Blueprint → connect this repo → it reads this file.
+# Fill the `sync: false` values when prompted, then deploy.
+
+services:
+  - type: web
+    name: paydown-api
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      # FalkorDB Cloud (free tier) — paste host/port from app.falkordb.cloud
+      - key: FALKORDB_HOST
+        sync: false
+      - key: FALKORDB_PORT
+        value: "6379"
+      - key: FALKORDB_USERNAME
+        sync: false
+      - key: FALKORDB_PASSWORD
+        sync: false
+
+      # Nebius Token Factory (NVIDIA Nemotron)
+      - key: NEBIUS_API_KEY
+        sync: false
+      - key: NEBIUS_MODEL
+        value: nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B
+      - key: AI_ENABLED
+        value: "true"
+
+      # Demo safety
+      - key: DEMO_ACCESS_CODE
+        sync: false
+      - key: DEMO_MAX_CALLS_PER_DAY
+        value: "100"
+      - key: DEMO_MAX_TOKENS_PER_CALL
+        value: "2000"
+      - key: CLARIFY_PUBLISH_ENABLED
+        value: "false"
+
+      # Set this to your Vercel URL after step 3 (e.g. https://paydown.vercel.app)
+      - key: CORS_ORIGINS
+        sync: false
